@@ -3,6 +3,7 @@ pragma solidity ^0.8.13;
 
 import {Script, console2} from "forge-std/Script.sol";
 import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import {CToken} from "compound-protocol/CToken.sol";
 import {Comptroller} from "compound-protocol/Comptroller.sol";
 import {SimplePriceOracle} from "compound-protocol/SimplePriceOracle.sol";
 import {CErc20Delegate} from "compound-protocol/CErc20Delegate.sol";
@@ -20,31 +21,47 @@ contract CompoundScript is Script {
     function run() public {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
         vm.startBroadcast(deployerPrivateKey);
-        Token erc20 = new Token("jim", "JIM");
-        // borrow rate should be 0
-        // so we need to set baseRatePerYear and multiplierPerYear to 0
+        // deploy underlying token contract
+        Token tka = new Token("token A", "TKA");
+        // deploy interest rate model contract, which borrow rate is 0
+        // to make borrow rate equal to 0
+        // we need to set baseRatePerYear and multiplierPerYear to 0
         // which would make (ur * baseRatePerYear/2102400 / BASE + baseRatePerYear/2102400) = 0
         WhitePaperInterestRateModel model = new WhitePaperInterestRateModel(0, 0);
+        // deploy oracle contract
         SimplePriceOracle oracle = new SimplePriceOracle();
+        // deploy comptroller contract
         Comptroller comptroller = new Comptroller();
-        comptroller._setPriceOracle(oracle);
+        // deploy cErc20 delegate contract
         CErc20Delegate delegate = new CErc20Delegate();
+        
+        // deploy unitroller contract
+        Unitroller unitroller = new Unitroller();
+        // set delegator implementation contract for unitroller
+        unitroller._setPendingImplementation(address(comptroller));
+        // accept implementation
+        comptroller._become(unitroller);
+        Comptroller comptrollerProxy = Comptroller(address(unitroller));
+
+        // deploy delegator contract
         CErc20Delegator delegator = new CErc20Delegator(
-            address(erc20),
-            comptroller,
+            address(tka),
+            comptrollerProxy,
             model,
             // exchange rate should be 1:1
             1e18,
-            "compound jim",
-            "cJIM",
+            "compound token A",
+            "cTKA",
             18,
             payable(msg.sender),
             address(delegate),
-            "0x"
+            ""
         );
-        Unitroller unitroller = new Unitroller();
-        unitroller._setPendingImplementation(address(delegator));
-        unitroller._acceptImplementation();
+        
+        // set oracle contract for comptroller
+        comptrollerProxy._setPriceOracle(oracle);
+        // add token A into the lending market
+        comptrollerProxy._supportMarket(CToken(address(delegator)));
 
         vm.stopBroadcast();
     }
