@@ -2,3 +2,4 @@ ds-test/=lib/forge-std/lib/ds-test/src/
 forge-std/=lib/forge-std/src/
 compound-protocol/=lib/compound-protocol/contracts
 @openzeppelin/contracts/=lib/openzeppelin-contracts/contracts/
+aave/=lib/aave-v3-core/contracts
