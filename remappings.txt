@@ -3,3 +3,4 @@ forge-std/=lib/forge-std/src/
 compound-protocol/=lib/compound-protocol/contracts
 @openzeppelin/contracts/=lib/openzeppelin-contracts/contracts/
 aave/=lib/aave-v3-core/contracts
+uniswap/=lib/v3-periphery/contracts
