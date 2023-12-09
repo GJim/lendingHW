@@ -13,6 +13,10 @@ import {Unitroller} from "compound-protocol/Unitroller.sol";
 
 contract Token is ERC20 {
     constructor(string memory name_, string memory symbol_) ERC20(name_, symbol_) {}
+
+    function mint(address account, uint256 value) public {
+        _mint(account, value);
+    }
 }
 
 contract CompoundScript is Script {
@@ -62,6 +66,9 @@ contract CompoundScript is Script {
         comptrollerProxy._setPriceOracle(oracle);
         // add token A into the lending market
         comptrollerProxy._supportMarket(CToken(address(delegator)));
+
+        // test mint 100 token A for comptroller
+        tka.mint(address(comptrollerProxy), 100e18);
 
         vm.stopBroadcast();
     }
