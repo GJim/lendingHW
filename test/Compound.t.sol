@@ -14,6 +14,10 @@ import {CErc20Interface, CTokenInterface} from "compound-protocol/CTokenInterfac
 
 contract Token is ERC20 {
     constructor(string memory name_, string memory symbol_) ERC20(name_, symbol_) {}
+
+    function mint(address account, uint256 value) public {
+        _mint(account, value);
+    }
 }
 
 contract CompoundTest is Test {
@@ -97,21 +101,20 @@ contract CompoundTest is Test {
         comptrollerProxy._supportMarket(CToken(address(delegatorB)));
         
         // setting token A price to $1
-        // oracle.setUnderlyingPrice(tka, 1*1e18);
-        oracle.setDirectPrice(address(tka), 1e18);
+        oracle.setUnderlyingPrice(CToken(address(delegator)), 1e18);
         // setting token B price to $100
         oracle.setDirectPrice(address(tkb), 100e18);
         // set token B collateral factor 50%
         comptrollerProxy._setCollateralFactor(CToken(address(delegatorB)), 0.5e18);
         // set liquidation incentive 10%
-        comptrollerProxy._setLiquidationIncentive(0.1e18);
+        comptrollerProxy._setLiquidationIncentive(1.1e18);
         // set close factor 80%
         comptrollerProxy._setCloseFactor(0.8e18);
 
         // provide some A, B tokens for liquidity pool
         uint256 basicLiquidity = 100e18;
-        deal(address(tka), owner, basicLiquidity);
-        deal(address(tkb), owner, basicLiquidity);
+        tka.mint(owner, basicLiquidity);
+        tkb.mint(owner, basicLiquidity);
         tka.approve(address(delegator), basicLiquidity);
         tkb.approve(address(delegatorB), basicLiquidity);
         delegator.mint(basicLiquidity);
@@ -126,9 +129,9 @@ contract CompoundTest is Test {
 
     function testMintRedeem() public {
         vm.startPrank(user1);
-        // deal 100 erc20 token for user1
+        // mint 100 erc20 token for user1
         uint256 mintAmount = 100 * 10 ** tka.decimals();
-        deal(address(tka), user1, mintAmount);
+        tka.mint(user1, mintAmount);
         // approve 100 erc20 token for delegator
         tka.approve(address(delegator), mintAmount);
         // mint cErc20
@@ -145,8 +148,8 @@ contract CompoundTest is Test {
         vm.startPrank(user1);
         uint256 mintAmount = 1 * 10 ** tkb.decimals();
         uint256 borrowAmount = 50 * 10 ** tka.decimals();
-        // deal 1 token B for user1
-        deal(address(tkb), user1, mintAmount);
+        // mint 1 token B for user1
+        tkb.mint(user1, mintAmount);
         // approve 1 token B token for delegator
         tkb.approve(address(delegatorB), mintAmount);
         // mint 1 cTKB
@@ -166,8 +169,8 @@ contract CompoundTest is Test {
         vm.startPrank(user1);
         uint256 mintAmount = 1 * 10 ** tkb.decimals();
         uint256 borrowAmount = 50 * 10 ** tka.decimals();
-        // deal 1 token B for user1
-        deal(address(tkb), user1, mintAmount);
+        // mint 1 token B for user1
+        tkb.mint(user1, mintAmount);
         // approve 1 token B token for delegator
         tkb.approve(address(delegatorB), mintAmount);
         // mint 1 cTKB
@@ -192,8 +195,8 @@ contract CompoundTest is Test {
         // get the amount of user1 liquidity shortfall
         (, , uint shortfall) = comptrollerProxy.getAccountLiquidity(user1);
 
-        // deal the amount of token A to user2
-        deal(address(tka), user2, shortfall);
+        // mint the amount of token A to user2
+        tka.mint(user2, shortfall);
         // user2 approve token A to compound
         tka.approve(address(delegator), shortfall);
 
@@ -214,8 +217,8 @@ contract CompoundTest is Test {
         vm.startPrank(user1);
         uint256 mintAmount = 1 * 10 ** tkb.decimals();
         uint256 borrowAmount = 50 * 10 ** tka.decimals();
-        // deal 1 token B for user1
-        deal(address(tkb), user1, mintAmount);
+        // mint 1 token B for user1
+        tkb.mint(user1, mintAmount);
         // approve 1 token B token for delegator
         tkb.approve(address(delegatorB), mintAmount);
         // mint 1 cTKB
@@ -239,8 +242,8 @@ contract CompoundTest is Test {
         // get the amount of user1 liquidity shortfall
         (uint errorCode, uint liquidity, uint shortfall) = comptrollerProxy.getAccountLiquidity(user1);
 
-        // deal the amount of token A to user2
-        deal(address(tka), user2, shortfall);
+        // mint the amount of token A to user2
+        tka.mint(user2, shortfall);
         // user2 approve token A to compound
         tka.approve(address(delegator), shortfall);
 
